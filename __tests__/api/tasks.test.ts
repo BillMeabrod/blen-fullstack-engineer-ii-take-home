@@ -2,13 +2,16 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import { eq } from "drizzle-orm"
 import postgres from "postgres"
 import * as schema from "../../lib/schema"
-import { projects, tasks } from "../../lib/schema"
+import { projects, tasks, type Task } from "../../lib/schema"
+import type { PaginatedResponse } from "../../lib/types"
 import { createTestRequest, parseResponse } from "../helpers/request"
 import { GET, POST } from "@/app/api/tasks/route"
 import { GET as GET_BY_ID, PATCH, DELETE } from "@/app/api/tasks/[id]/route"
 
 const client = postgres(process.env.DATABASE_URL!)
 const db = drizzle(client, { schema })
+
+type TaskWithProject = Task & { project: { id: string; name: string } }
 
 let projectId: string
 
@@ -47,7 +50,7 @@ describe("POST /api/tasks", () => {
     })
 
     const res = await POST(req)
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<Task>(res)
 
     expect(status).toBe(201)
     expect(data).toMatchObject({
@@ -101,7 +104,7 @@ describe("POST /api/tasks", () => {
     })
 
     const res = await POST(req)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<Task>(res)
 
     expect(data.status).toBe("open")
     expect(data.priority).toBe("medium")
@@ -157,7 +160,7 @@ describe("GET /api/tasks", () => {
       searchParams: { page: "1", pageSize: "2" },
     })
     const res = await GET(req)
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<PaginatedResponse<Task>>(res)
 
     expect(status).toBe(200)
     expect(data.data).toHaveLength(2)
@@ -172,10 +175,10 @@ describe("GET /api/tasks", () => {
       searchParams: { status: "open" },
     })
     const res = await GET(req)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<PaginatedResponse<Task>>(res)
 
     expect(data.data).toHaveLength(3)
-    data.data.forEach((task: any) => expect(task.status).toBe("open"))
+    data.data.forEach((task) => expect(task.status).toBe("open"))
   })
 
   it("filters by priority", async () => {
@@ -183,7 +186,7 @@ describe("GET /api/tasks", () => {
       searchParams: { priority: "high" },
     })
     const res = await GET(req)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<PaginatedResponse<Task>>(res)
 
     expect(data.data).toHaveLength(1)
     expect(data.data[0].title).toBe("Task A")
@@ -194,10 +197,10 @@ describe("GET /api/tasks", () => {
       searchParams: { assignee: "alice" },
     })
     const res = await GET(req)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<PaginatedResponse<Task>>(res)
 
     expect(data.data).toHaveLength(2)
-    data.data.forEach((task: any) => expect(task.assignee).toBe("alice"))
+    data.data.forEach((task) => expect(task.assignee).toBe("alice"))
   })
 
   it("filters by projectId", async () => {
@@ -215,10 +218,10 @@ describe("GET /api/tasks", () => {
       searchParams: { projectId },
     })
     const res = await GET(req)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<PaginatedResponse<Task>>(res)
 
     expect(data.data).toHaveLength(5)
-    data.data.forEach((task: any) => expect(task.projectId).toBe(projectId))
+    data.data.forEach((task) => expect(task.projectId).toBe(projectId))
   })
 })
 
@@ -237,7 +240,7 @@ describe("GET /api/tasks/:id", () => {
     const res = await GET_BY_ID(req, {
       params: Promise.resolve({ id: task.id }),
     })
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<TaskWithProject>(res)
 
     expect(status).toBe(200)
     expect(data.title).toBe("Detail Task")
@@ -275,7 +278,7 @@ describe("PATCH /api/tasks/:id", () => {
     const res = await PATCH(req, {
       params: Promise.resolve({ id: task.id }),
     })
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<Task>(res)
 
     expect(status).toBe(200)
     expect(data.status).toBe("in_progress")
@@ -296,7 +299,7 @@ describe("PATCH /api/tasks/:id", () => {
     })
 
     expect(res.status).toBe(200)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<Task>(res)
     expect(data.status).toBe("in_review")
   })
 
@@ -332,8 +335,27 @@ describe("PATCH /api/tasks/:id", () => {
     })
 
     expect(res.status).toBe(200)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<Task>(res)
     expect(data.status).toBe("in_progress")
+  })
+
+  it("allows same-status PATCH as a no-op (idempotent)", async () => {
+    const [task] = await db
+      .insert(tasks)
+      .values({ title: "Idempotent Task", status: "open", projectId })
+      .returning()
+
+    const req = createTestRequest(`/api/tasks/${task.id}`, {
+      method: "PATCH",
+      body: { status: "open" },
+    })
+    const res = await PATCH(req, {
+      params: Promise.resolve({ id: task.id }),
+    })
+    const { status, data } = await parseResponse<Task>(res)
+
+    expect(status).toBe(200)
+    expect(data.status).toBe("open")
   })
 
   it("rejects invalid transition: open -> completed", async () => {
@@ -383,7 +405,7 @@ describe("PATCH /api/tasks/:id", () => {
     const res = await PATCH(req, {
       params: Promise.resolve({ id: task.id }),
     })
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<Task>(res)
 
     expect(status).toBe(200)
     expect(data.title).toBe("Updated Title")

@@ -2,13 +2,28 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import { eq } from "drizzle-orm"
 import postgres from "postgres"
 import * as schema from "../../lib/schema"
-import { projects, tasks } from "../../lib/schema"
+import { projects, tasks, type Project, type Task } from "../../lib/schema"
 import { createTestRequest, parseResponse } from "../helpers/request"
 import { GET, POST } from "@/app/api/projects/route"
 import { GET as GET_BY_ID, PATCH, DELETE } from "@/app/api/projects/[id]/route"
 
 const client = postgres(process.env.DATABASE_URL!)
 const db = drizzle(client, { schema })
+
+type ProjectListItem = Project & { taskCount: number }
+
+type TaskCountsByStatus = {
+  total: number
+  open: number
+  in_progress: number
+  in_review: number
+  completed: number
+}
+
+type ProjectDetail = Project & {
+  tasks: Task[]
+  taskCounts: TaskCountsByStatus
+}
 
 beforeEach(async () => {
   await db.delete(tasks)
@@ -33,7 +48,7 @@ describe("POST /api/projects", () => {
     })
 
     const res = await POST(req)
-    const { status, data } = await parseResponse(res)
+    const { status, data } = await parseResponse<Project>(res)
 
     expect(status).toBe(201)
     expect(data).toMatchObject({
@@ -84,7 +99,7 @@ describe("GET /api/projects", () => {
   it("returns all projects", async () => {
     const req = createTestRequest("/api/projects")
     const res = await GET(req)
-    const { status, data } = await parseResponse<any[]>(res)
+    const { status, data } = await parseResponse<ProjectListItem[]>(res)
 
     expect(status).toBe(200)
     expect(data).toHaveLength(3)
@@ -95,14 +110,14 @@ describe("GET /api/projects", () => {
       searchParams: { status: "archived" },
     })
     const res = await GET(req)
-    const { status, data } = await parseResponse<any[]>(res)
+    const { status, data } = await parseResponse<ProjectListItem[]>(res)
 
     expect(status).toBe(200)
     expect(data).toHaveLength(1)
     expect(data[0].name).toBe("Archived")
   })
 
-  it("includes task count for each project", async () => {
+  it("includes taskCount for each project", async () => {
     const [activeOne] = await db
       .select()
       .from(projects)
@@ -115,10 +130,11 @@ describe("GET /api/projects", () => {
 
     const req = createTestRequest("/api/projects")
     const res = await GET(req)
-    const { data } = await parseResponse<any[]>(res)
+    const { data } = await parseResponse<ProjectListItem[]>(res)
 
-    const found = data.find((p: any) => p.name === "Active One")
-    expect(found._count?.tasks ?? found.taskCount).toBe(2)
+    const found = data.find((p) => p.name === "Active One")
+    expect(found).toBeDefined()
+    expect(found?.taskCount).toBe(2)
   })
 })
 
@@ -127,7 +143,7 @@ describe("GET /api/projects", () => {
 // ---------------------------------------------------------------------------
 
 describe("GET /api/projects/:id", () => {
-  it("returns project with task counts by status", async () => {
+  it("returns project with tasks and task counts by status", async () => {
     const [project] = await db
       .insert(projects)
       .values({ name: "Detail Project" })
@@ -144,14 +160,23 @@ describe("GET /api/projects/:id", () => {
     const res = await GET_BY_ID(req, {
       params: Promise.resolve({ id: project.id }),
     })
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<ProjectDetail>(res)
 
     expect(status).toBe(200)
     expect(data.name).toBe("Detail Project")
     expect(data.taskCounts.total).toBe(4)
     expect(data.taskCounts.open).toBe(2)
     expect(data.taskCounts.in_progress).toBe(1)
+    expect(data.taskCounts.in_review).toBe(0)
     expect(data.taskCounts.completed).toBe(1)
+    expect(Array.isArray(data.tasks)).toBe(true)
+    expect(data.tasks).toHaveLength(4)
+    expect(data.tasks.map((t) => t.title).sort()).toEqual([
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+    ])
   })
 
   it("returns 404 for non-existent project", async () => {
@@ -184,7 +209,7 @@ describe("PATCH /api/projects/:id", () => {
     const res = await PATCH(req, {
       params: Promise.resolve({ id: project.id }),
     })
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<Project>(res)
 
     expect(status).toBe(200)
     expect(data.name).toBe("Updated")

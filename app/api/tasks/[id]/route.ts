@@ -39,7 +39,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
  *   - 400 if status transition is invalid (see VALID_STATUS_TRANSITIONS in lib/types.ts)
  *
  * Hints:
- *   - Only validate status transitions when `body.status` differs from current
+ *   - Only validate transitions when `body.status` differs from current. PATCH
+ *     with the same status as current is idempotent — return 200 without
+ *     consulting VALID_STATUS_TRANSITIONS (the map only encodes state changes).
  *   - Use VALID_STATUS_TRANSITIONS map to check allowed transitions
  *   - Always set updatedAt to new Date()
  */

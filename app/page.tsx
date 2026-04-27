@@ -1,11 +1,8 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import Link from "next/link"
-
 // TODO: This is a Server Component — fetch projects directly from the database
 // or via your API, then render them here. No "use client" needed for the list.
-
-// TODO: Add a client component for "Create Project" dialog (interactive)
-// TODO: Use <Link href="/projects/[id]"> for navigating to project detail
+//
+// Use `next/link` for navigation to /projects/[id] and a client component for
+// the "Create Project" dialog.
 
 export default function Page() {
   return (
@@ -21,13 +18,9 @@ export default function Page() {
           {/* TODO: Add a <CreateProjectDialog /> client component here */}
         </div>
 
-        {/* TODO: Fetch and display projects as cards */}
-        {/* Each card should link to /projects/[id] using next/link */}
+        {/* TODO: Fetch and display projects as cards that link to /projects/[id] */}
         <p className="text-muted-foreground">
-          Replace this with your project list. Use{" "}
-          <code className="text-sm">{"<Link>"}</code> from{" "}
-          <code className="text-sm">next/link</code> to navigate to{" "}
-          <code className="text-sm">/projects/[id]</code>.
+          Replace this with your project list.
         </p>
       </div>
     </main>

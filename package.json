@@ -10,12 +10,12 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "test": "jest --forceExit --detectOpenHandles",
+    "test": "jest --runInBand --forceExit --detectOpenHandles",
     "db:migrate": "tsx drizzle/migrate.ts",
     "db:seed": "tsx drizzle/seed.ts",
     "db:reset": "tsx drizzle/reset.ts",
     "db:generate": "drizzle-kit generate",
-    "check": "tsc --noEmit && eslint && jest --forceExit --detectOpenHandles"
+    "check": "tsc --noEmit && eslint && jest --runInBand --forceExit --detectOpenHandles"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

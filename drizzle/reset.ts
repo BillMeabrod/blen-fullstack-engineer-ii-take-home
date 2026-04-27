@@ -4,16 +4,19 @@ import { sql } from "drizzle-orm"
 import postgres from "postgres"
 
 const connectionString = process.env.DATABASE_URL!
-const client = postgres(connectionString, { max: 1 })
+const client = postgres(connectionString, {
+  max: 1,
+  onnotice: () => {}, // silence NOTICE-level messages from CASCADE drops
+})
 const db = drizzle(client)
 
 async function main() {
   console.log("Resetting database...")
 
-  // Drop all tables and clear migration history
-  await db.execute(sql`DROP SCHEMA public CASCADE`)
+  // Drop both schemas so this works on a fresh DB and after prior migrations.
+  await db.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`)
   await db.execute(sql`CREATE SCHEMA public`)
-  await db.execute(sql`DELETE FROM drizzle.__drizzle_migrations`)
+  await db.execute(sql`DROP SCHEMA IF EXISTS drizzle CASCADE`)
 
   // Re-run migrations
   await migrate(db, { migrationsFolder: "./drizzle" })

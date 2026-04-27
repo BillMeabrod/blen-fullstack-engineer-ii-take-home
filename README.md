@@ -24,7 +24,7 @@ Build a **Task Tracker with AI Features** — a full-stack application for manag
 - **Database schema** (Drizzle ORM) with migrations and seed data
 - **Docker Compose** with PostgreSQL + a mock LLM service — no external APIs or keys needed
 - **Mock LLM service** — an OpenAI-compatible chat completions API that returns deterministic responses (see `mock-llm/server.ts` for behavior)
-- **Pre-written test suite** (49 tests) — your implementation must pass all of them
+- **Pre-written test suite** (54 tests) — your implementation must pass all of them
 - **API route scaffolds** with detailed JSDoc describing expected behavior and Drizzle hints
 - **LLM client scaffold** (`lib/llm.ts`) — implement the wrapper around the mock LLM
 - **TypeScript types** including valid status transitions
@@ -194,7 +194,7 @@ bun run db:generate
 3. Implement all API routes and the LLM client (replace the `TODO` stubs)
 4. Build the dashboard UI with AI features
 5. Answer the questions in `SOLUTION_DESIGN.md`
-6. Ensure all 49 tests pass, typecheck is clean, and lint passes
+6. Ensure all 54 tests pass, typecheck is clean, and lint passes
 7. Add the following GitHub users as **collaborators** on your repo ([how to add collaborators](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository)):
    - `naodya` (Naod — Engineering)
    - `juliusoh` (Julius — Engineering)
@@ -204,11 +204,11 @@ bun run db:generate
 
 | Area | Weight | What We Look For |
 |------|--------|-----------------|
-| **Tests passing** | 35% | All 49 tests green |
+| **Tests passing** | 30% | All 54 tests green |
+| **Code quality** | 25% | Clean TypeScript, separation of concerns, lint/typecheck clean |
 | **AI integration quality** | 20% | Error handling, prompt design, LLM client robustness |
-| **Code quality** | 20% | Clean TypeScript, separation of concerns, lint/typecheck clean |
-| **UI implementation** | 10% | Functional, includes AI features, well-structured |
 | **Solution design** | 15% | Production thinking, security awareness, trade-offs |
+| **UI implementation** | 10% | Functional, includes AI features, well-structured |
 
 ## Questions?
 

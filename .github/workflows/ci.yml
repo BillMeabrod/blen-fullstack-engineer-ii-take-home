@@ -38,13 +38,23 @@ jobs:
 
       - run: bun install
 
-      - name: Build and start mock LLM
+      - name: Start mock LLM
         run: |
           cd mock-llm
           bun install
-          bun run server.ts &
-          sleep 3
-          curl -f http://localhost:11434/health
+          nohup bun run server.ts >../mock-llm.log 2>&1 &
+          echo $! > ../mock-llm.pid
+          cd ..
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:11434/health >/dev/null; then
+              echo "mock-llm is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "mock-llm failed to start within 30s" >&2
+          cat mock-llm.log >&2
+          exit 1
 
       - name: Run migrations
         run: bun run db:migrate

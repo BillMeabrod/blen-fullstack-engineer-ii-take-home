@@ -1,18 +1,57 @@
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import * as schema from "../../lib/schema"
-import { projects, tasks } from "../../lib/schema"
+import { projects, tasks, type Task } from "../../lib/schema"
 import { createTestRequest, parseResponse } from "../helpers/request"
+
+jest.mock("@/lib/llm", () => {
+  const actual = jest.requireActual<typeof import("@/lib/llm")>("@/lib/llm")
+  return {
+    ...actual,
+    chatCompletion: jest.fn(actual.chatCompletion),
+  }
+})
+
 import { POST as CATEGORIZE } from "@/app/api/ai/categorize/route"
 import { POST as SUMMARIZE } from "@/app/api/ai/summarize/route"
 import { POST as SUGGEST_PRIORITY } from "@/app/api/ai/suggest-priority/route"
+import * as llm from "@/lib/llm"
+
+const mockChatCompletion = llm.chatCompletion as jest.MockedFunction<
+  typeof llm.chatCompletion
+>
+const realLlm = jest.requireActual<typeof import("@/lib/llm")>("@/lib/llm")
 
 const client = postgres(process.env.DATABASE_URL!)
 const db = drizzle(client, { schema })
 
+type CategorizeResponse = {
+  task: Task
+  categorization: { category: string; confidence: number }
+}
+
+type SummarizeResponse = {
+  project: { id: string; name: string }
+  summary: {
+    summary: string
+    taskCount: number
+    health: "on_track" | "needs_attention" | "completed"
+  }
+}
+
+type SuggestPriorityResponse = {
+  suggestion: { priority: string; reasoning: string }
+}
+
 let projectId: string
 
 beforeEach(async () => {
+  // Default: delegate to the real lib/llm implementation. Tests that need
+  // to simulate LLM errors override per-call with mockRejectedValueOnce /
+  // mockResolvedValueOnce.
+  mockChatCompletion.mockReset()
+  mockChatCompletion.mockImplementation(realLlm.chatCompletion)
+
   await db.delete(tasks)
   await db.delete(projects)
 
@@ -49,7 +88,7 @@ describe("POST /api/ai/categorize", () => {
       body: { taskId: task.id },
     })
     const res = await CATEGORIZE(req)
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<CategorizeResponse>(res)
 
     expect(status).toBe(200)
     expect(data.categorization).toBeDefined()
@@ -78,7 +117,7 @@ describe("POST /api/ai/categorize", () => {
       body: { taskId: task.id },
     })
     const res = await CATEGORIZE(req)
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<CategorizeResponse>(res)
 
     expect(status).toBe(200)
     expect(data.categorization.category).toBe("feature")
@@ -99,7 +138,7 @@ describe("POST /api/ai/categorize", () => {
       body: { taskId: task.id },
     })
     const res = await CATEGORIZE(req)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<CategorizeResponse>(res)
 
     expect(data.categorization.category).toBe("documentation")
   })
@@ -122,6 +161,42 @@ describe("POST /api/ai/categorize", () => {
     const res = await CATEGORIZE(req)
 
     expect(res.status).toBe(404)
+  })
+
+  it("returns 503 when the LLM service is unreachable", async () => {
+    const [task] = await db
+      .insert(tasks)
+      .values({ title: "Some task", projectId })
+      .returning()
+
+    mockChatCompletion.mockRejectedValueOnce(new Error("ECONNREFUSED"))
+
+    const req = createTestRequest("/api/ai/categorize", {
+      method: "POST",
+      body: { taskId: task.id },
+    })
+    const res = await CATEGORIZE(req)
+    expect(res.status).toBe(503)
+  })
+
+  it("returns 502 when the LLM response is not valid JSON", async () => {
+    const [task] = await db
+      .insert(tasks)
+      .values({ title: "Some task", projectId })
+      .returning()
+
+    mockChatCompletion.mockResolvedValueOnce({
+      content: "this is not valid json",
+      model: "mock-llm-v1",
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+    })
+
+    const req = createTestRequest("/api/ai/categorize", {
+      method: "POST",
+      body: { taskId: task.id },
+    })
+    const res = await CATEGORIZE(req)
+    expect(res.status).toBe(502)
   })
 })
 
@@ -147,7 +222,7 @@ describe("POST /api/ai/summarize", () => {
       body: { projectId },
     })
     const res = await SUMMARIZE(req)
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<SummarizeResponse>(res)
 
     expect(status).toBe(200)
     expect(data.project).toBeDefined()
@@ -167,7 +242,7 @@ describe("POST /api/ai/summarize", () => {
       body: { projectId },
     })
     const res = await SUMMARIZE(req)
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<SummarizeResponse>(res)
 
     expect(status).toBe(200)
     expect(data.summary).toBeDefined()
@@ -192,6 +267,17 @@ describe("POST /api/ai/summarize", () => {
 
     expect(res.status).toBe(404)
   })
+
+  it("returns 503 when the LLM service is unreachable", async () => {
+    mockChatCompletion.mockRejectedValueOnce(new Error("ECONNREFUSED"))
+
+    const req = createTestRequest("/api/ai/summarize", {
+      method: "POST",
+      body: { projectId },
+    })
+    const res = await SUMMARIZE(req)
+    expect(res.status).toBe(503)
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -209,7 +295,7 @@ describe("POST /api/ai/suggest-priority", () => {
       },
     })
     const res = await SUGGEST_PRIORITY(req)
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<SuggestPriorityResponse>(res)
 
     expect(status).toBe(200)
     expect(data.suggestion).toBeDefined()
@@ -221,12 +307,12 @@ describe("POST /api/ai/suggest-priority", () => {
     const req = createTestRequest("/api/ai/suggest-priority", {
       method: "POST",
       body: {
-        title: "Update user profile page",
-        description: "Add avatar upload functionality to the profile settings",
+        title: "User profile page",
+        description: "Add avatar to the profile settings",
       },
     })
     const res = await SUGGEST_PRIORITY(req)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<SuggestPriorityResponse>(res)
 
     expect(data.suggestion.priority).toBe("medium")
   })
@@ -241,7 +327,7 @@ describe("POST /api/ai/suggest-priority", () => {
       },
     })
     const res = await SUGGEST_PRIORITY(req)
-    const { data } = await parseResponse<any>(res)
+    const { data } = await parseResponse<SuggestPriorityResponse>(res)
 
     expect(data.suggestion.priority).toBe("low")
   })
@@ -262,9 +348,20 @@ describe("POST /api/ai/suggest-priority", () => {
       body: { title: "Fix broken deployment pipeline" },
     })
     const res = await SUGGEST_PRIORITY(req)
-    const { status, data } = await parseResponse<any>(res)
+    const { status, data } = await parseResponse<SuggestPriorityResponse>(res)
 
     expect(status).toBe(200)
     expect(data.suggestion).toBeDefined()
+  })
+
+  it("returns 503 when the LLM service is unreachable", async () => {
+    mockChatCompletion.mockRejectedValueOnce(new Error("ECONNREFUSED"))
+
+    const req = createTestRequest("/api/ai/suggest-priority", {
+      method: "POST",
+      body: { title: "Anything" },
+    })
+    const res = await SUGGEST_PRIORITY(req)
+    expect(res.status).toBe(503)
   })
 })

@@ -18,12 +18,6 @@ const eslintConfig = defineConfig([
     "drizzle.config.ts",
     "jest.config.ts",
   ]),
-  {
-    files: ["__tests__/**/*.ts"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    },
-  },
 ]);
 
 export default eslintConfig;
