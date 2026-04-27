@@ -65,5 +65,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      # Tests fail by design on the template repo because the API routes are
+      # 501 stubs awaiting candidate implementation. Candidates' forks run the
+      # full suite — only the template itself is skipped.
       - name: Run tests
+        if: ${{ github.repository != 'blencorp/blen-fullstack-engineer-ii-take-home' }}
         run: bun run test
