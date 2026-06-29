@@ -8,6 +8,8 @@ const config: Config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
+  globalSetup: "<rootDir>/__tests__/globalSetup.ts",
+  setupFiles: ["<rootDir>/__tests__/loadEnv.ts"],
   setupFilesAfterEnv: ["<rootDir>/__tests__/setup.ts"],
   testTimeout: 15000,
 }

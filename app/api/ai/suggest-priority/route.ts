@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { suggestTaskPriority, LlmParseError } from "@/lib/core/ai"
 
 /**
  * POST /api/ai/suggest-priority
@@ -32,9 +33,28 @@ import { NextRequest, NextResponse } from "next/server"
  *   - The mock LLM returns { priority, reasoning }
  */
 export async function POST(request: NextRequest) {
-  void request
-  return NextResponse.json(
-    { error: "POST /api/ai/suggest-priority not implemented" },
-    { status: 501 }
-  )
+  const body = await request.json()
+  const { title, description } = body
+
+  if (!title?.trim()) {
+    return NextResponse.json({ error: "title is required" }, { status: 400 })
+  }
+
+  let suggestion
+  try {
+    suggestion = await suggestTaskPriority(title, description)
+  } catch (err) {
+    if (err instanceof LlmParseError) {
+      return NextResponse.json(
+        { error: "LLM returned an unparseable response" },
+        { status: 502 }
+      )
+    }
+    return NextResponse.json(
+      { error: "LLM service is unavailable" },
+      { status: 503 }
+    )
+  }
+
+  return NextResponse.json({ suggestion })
 }

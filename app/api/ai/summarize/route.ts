@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/lib/db"
+import { projects } from "@/lib/schema"
+import { eq } from "drizzle-orm"
+import { summarizeProject, LlmParseError } from "@/lib/core/ai"
 
 /**
  * POST /api/ai/summarize
@@ -34,9 +38,40 @@ import { NextRequest, NextResponse } from "next/server"
  *   - The mock LLM returns { summary, taskCount, health } when triggered by "summarize"
  */
 export async function POST(request: NextRequest) {
-  void request
-  return NextResponse.json(
-    { error: "POST /api/ai/summarize not implemented" },
-    { status: 501 }
-  )
+  const body = await request.json()
+  const { projectId } = body
+
+  if (!projectId) {
+    return NextResponse.json({ error: "projectId is required" }, { status: 400 })
+  }
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+    with: { tasks: true },
+  })
+
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 })
+  }
+
+  let summary
+  try {
+    summary = await summarizeProject(project.tasks)
+  } catch (err) {
+    if (err instanceof LlmParseError) {
+      return NextResponse.json(
+        { error: "LLM returned an unparseable response" },
+        { status: 502 }
+      )
+    }
+    return NextResponse.json(
+      { error: "LLM service is unavailable" },
+      { status: 503 }
+    )
+  }
+
+  return NextResponse.json({
+    project: { id: project.id, name: project.name },
+    summary,
+  })
 }

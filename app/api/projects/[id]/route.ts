@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/lib/db"
+import { projects } from "@/lib/schema"
+import { eq } from "drizzle-orm"
+import { validateProjectDeletion } from "@/lib/core/projects"
 
 type RouteContext = { params: Promise<{ id: string }> }
+
+function isUniqueConstraintError(err: unknown): boolean {
+  if (err instanceof Error) {
+    const cause = err.cause as { code?: string; message?: string } | undefined
+    if (cause?.code === "23505") return true
+    if (err.message.includes("unique") || err.message.includes("duplicate")) return true
+    if (cause?.message?.includes("unique") || cause?.message?.includes("duplicate")) return true
+  }
+  return false
+}
 
 /**
  * GET /api/projects/:id
@@ -22,12 +36,26 @@ type RouteContext = { params: Promise<{ id: string }> }
  *   - Compute taskCounts by filtering the tasks array in memory
  */
 export async function GET(request: NextRequest, context: RouteContext) {
-  void request
-  void context
-  return NextResponse.json(
-    { error: "GET /api/projects/:id not implemented" },
-    { status: 501 }
-  )
+  const { id } = await context.params
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, id),
+    with: { tasks: true },
+  })
+
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 })
+  }
+
+  const taskCounts = {
+    total: project.tasks.length,
+    open: project.tasks.filter((t) => t.status === "open").length,
+    in_progress: project.tasks.filter((t) => t.status === "in_progress").length,
+    in_review: project.tasks.filter((t) => t.status === "in_review").length,
+    completed: project.tasks.filter((t) => t.status === "completed").length,
+  }
+
+  return NextResponse.json({ ...project, taskCounts })
 }
 
 /**
@@ -49,12 +77,41 @@ export async function GET(request: NextRequest, context: RouteContext) {
  *   - Check for unique constraint violations on name
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  void request
-  void context
-  return NextResponse.json(
-    { error: "PATCH /api/projects/:id not implemented" },
-    { status: 501 }
-  )
+  const { id } = await context.params
+  const body = await request.json()
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, id),
+  })
+
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 })
+  }
+
+  const { name, description, status } = body
+
+  try {
+    const [updated] = await db
+      .update(projects)
+      .set({
+        ...(name !== undefined && { name: name.trim() }),
+        ...(description !== undefined && { description }),
+        ...(status !== undefined && { status }),
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, id))
+      .returning()
+
+    return NextResponse.json(updated)
+  } catch (err) {
+    if (isUniqueConstraintError(err)) {
+      return NextResponse.json(
+        { error: "A project with this name already exists" },
+        { status: 409 }
+      )
+    }
+    throw err
+  }
 }
 
 /**
@@ -71,10 +128,27 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  *   - Return 200 with success message on deletion
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  void request
-  void context
-  return NextResponse.json(
-    { error: "DELETE /api/projects/:id not implemented" },
-    { status: 501 }
-  )
+  const { id } = await context.params
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, id),
+    with: { tasks: true },
+  })
+
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 })
+  }
+
+  try {
+    validateProjectDeletion(project.tasks)
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Cannot delete project" },
+      { status: 409 }
+    )
+  }
+
+  await db.delete(projects).where(eq(projects.id, id))
+
+  return NextResponse.json({ message: "Project deleted successfully" })
 }

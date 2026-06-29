@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/lib/db"
+import { tasks } from "@/lib/schema"
+import { eq } from "drizzle-orm"
+import { validateStatusTransition } from "@/lib/core/tasks"
+import type { TaskStatus } from "@/lib/schema"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -18,12 +23,24 @@ type RouteContext = { params: Promise<{ id: string }> }
  *   - Return project as `{ id, name }` only (not the full project object)
  */
 export async function GET(request: NextRequest, context: RouteContext) {
-  void request
-  void context
-  return NextResponse.json(
-    { error: "GET /api/tasks/:id not implemented" },
-    { status: 501 }
-  )
+  const { id } = await context.params
+
+  const task = await db.query.tasks.findFirst({
+    where: eq(tasks.id, id),
+    with: { project: true },
+  })
+
+  if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 })
+  }
+
+  return NextResponse.json({
+    ...task,
+    dueDate: task.dueDate?.toISOString() ?? null,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: task.updatedAt.toISOString(),
+    project: { id: task.project.id, name: task.project.name },
+  })
 }
 
 /**
@@ -46,12 +63,51 @@ export async function GET(request: NextRequest, context: RouteContext) {
  *   - Always set updatedAt to new Date()
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  void request
-  void context
-  return NextResponse.json(
-    { error: "PATCH /api/tasks/:id not implemented" },
-    { status: 501 }
-  )
+  const { id } = await context.params
+  const body = await request.json()
+
+  const task = await db.query.tasks.findFirst({
+    where: eq(tasks.id, id),
+  })
+
+  if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 })
+  }
+
+  if (body.status) {
+    try {
+      validateStatusTransition(task.status, body.status as TaskStatus)
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Invalid status transition" },
+        { status: 400 }
+      )
+    }
+  }
+
+  const { title, description, status, priority, assignee, dueDate, labels } = body
+
+  const [updated] = await db
+    .update(tasks)
+    .set({
+      ...(title !== undefined && { title }),
+      ...(description !== undefined && { description }),
+      ...(status !== undefined && { status }),
+      ...(priority !== undefined && { priority }),
+      ...(assignee !== undefined && { assignee }),
+      ...(dueDate !== undefined && { dueDate: new Date(dueDate) }),
+      ...(labels !== undefined && { labels }),
+      updatedAt: new Date(),
+    })
+    .where(eq(tasks.id, id))
+    .returning()
+
+  return NextResponse.json({
+    ...updated,
+    dueDate: updated.dueDate?.toISOString() ?? null,
+    createdAt: updated.createdAt.toISOString(),
+    updatedAt: updated.updatedAt.toISOString(),
+  })
 }
 
 /**
@@ -67,10 +123,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  *   - Return 200 with success message
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  void request
-  void context
-  return NextResponse.json(
-    { error: "DELETE /api/tasks/:id not implemented" },
-    { status: 501 }
-  )
+  const { id } = await context.params
+
+  const [deleted] = await db
+    .delete(tasks)
+    .where(eq(tasks.id, id))
+    .returning()
+
+  if (!deleted) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 })
+  }
+
+  return NextResponse.json({ message: "Task deleted successfully" })
 }

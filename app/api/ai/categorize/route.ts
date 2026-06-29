@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/lib/db"
+import { tasks } from "@/lib/schema"
+import { eq } from "drizzle-orm"
+import { categorizeTask, LlmParseError } from "@/lib/core/ai"
 
 /**
  * POST /api/ai/categorize
@@ -34,9 +38,46 @@ import { NextRequest, NextResponse } from "next/server"
  *   - Avoid duplicate labels: check if category is already in the array
  */
 export async function POST(request: NextRequest) {
-  void request
-  return NextResponse.json(
-    { error: "POST /api/ai/categorize not implemented" },
-    { status: 501 }
-  )
+  const body = await request.json()
+  const { taskId } = body
+
+  if (!taskId) {
+    return NextResponse.json({ error: "taskId is required" }, { status: 400 })
+  }
+
+  const task = await db.query.tasks.findFirst({
+    where: eq(tasks.id, taskId),
+  })
+
+  if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 })
+  }
+
+  let categorization
+  try {
+    categorization = await categorizeTask(task)
+  } catch (err) {
+    if (err instanceof LlmParseError) {
+      return NextResponse.json(
+        { error: "LLM returned an unparseable response" },
+        { status: 502 }
+      )
+    }
+    return NextResponse.json(
+      { error: "LLM service is unavailable" },
+      { status: 503 }
+    )
+  }
+
+  const updatedLabels = task.labels?.includes(categorization.category)
+    ? task.labels
+    : [...(task.labels ?? []), categorization.category]
+
+  const [updated] = await db
+    .update(tasks)
+    .set({ labels: updatedLabels, updatedAt: new Date() })
+    .where(eq(tasks.id, taskId))
+    .returning()
+
+  return NextResponse.json({ task: updated, categorization })
 }
