@@ -8,7 +8,24 @@ If something is not covered by this spec, reference the mockup first. If the moc
 ---
 
 ## Agent Behavior Rules
+
+### Before writing any code, read these files in order:
+1. `docs/UI_SPEC.md` — this file, the full implementation spec
+2. `docs/blen-mockup.html` — the visual reference (open in a browser to see the design)
+3. `app/layout.tsx` — the existing layout
+4. `lib/schema.ts` — the data models
+5. `lib/types.ts` — the domain types
+
+### Implementation order:
+1. Global layout and nav (`app/layout.tsx`)
+2. `app/page.tsx` — project list page
+3. `app/projects/[id]/page.tsx` — project detail page
+4. Shared components — dialogs, modals, slide-out panel
+
+### General rules:
 - This is a **React** implementation using **Next.js App Router** and **TypeScript**
+- Use `next/link` for all client-side navigation between pages — do not use `router.push` or `window.location` for navigation
+- Dynamic route params are async in Next.js 16: always use `const { id } = await params` in page components
 - Do not add comments unless the logic is genuinely non-obvious — no block comments above functions, no inline narration of what the code is doing
 - Do not use `any` types anywhere
 - Do not install new dependencies without flagging it and asking first

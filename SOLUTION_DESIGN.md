@@ -76,3 +76,12 @@ The application has grown to 100,000 projects and 5 million tasks across 10,000 
 Add any additional notes about your implementation here — design decisions, trade-offs you made, things you'd do differently with more time, etc.
 
 **Your notes:**
+1. I want to be fully transparent that I used AI to assist me. Most of the API was done using Claude chat mode. I conversed with Claude and manually copy and pasted suggestions over. The architecture and design choices came from me though. For fully transparency I've included the Claude transcript in my docs folder. I handled the UI using Agentic code. Otherwise my version probably wouldn't have looked as pretty and probably would have taken a lot longer. I am capable of understanding front end and working in it. But I'm not a designer. I did my best to ensure it looked professional and I took the time to ensure everything behaved as I expected. I included my spec file in the docs.
+
+2. With more time I would like to get into better prompt engineering. I'd love to see what we can put together. Maybe a RAG system that pulls relevant documents and meeting transcripts to make better categorization and prioritization choices. I'm just really hopeful to work more with AI integration.
+
+3. Hexagonal Architecture was an active choice I made from the very begining. Knowing AI is volitile and the tech is changing all the time it made sense that an AI integration would be easily swappable. So this style made the mode sense to me.
+
+4. Beyond the base requirements I also added mock logging and caching systems so you can see some of my thoughts on those in action.
+
+5. Areas for growth: My knowledge of encryption particularly around federal government standards is not great. Just haven't had a lot of opportunity to dive that deep into security knowledge. But I'm excited to learn. In fact any gap you may find is an opportunity to learn. I'm an engineer at heart. Give me a problem and I'm here to solve it.
