@@ -3,12 +3,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 export default function Nav() {
   const pathname = usePathname()
   const [showComingSoon, setShowComingSoon] = useState(false)
   const [comingSoonTitle, setComingSoonTitle] = useState('')
+  const mouseDownOnBackdrop = useRef(false)
 
   const isProjectsActive = pathname === '/' || pathname.startsWith('/projects')
 
@@ -106,7 +107,8 @@ export default function Nav() {
             justifyContent: 'center',
             padding: '24px',
           }}
-          onClick={() => setShowComingSoon(false)}
+          onMouseDown={e => { mouseDownOnBackdrop.current = e.target === e.currentTarget }}
+          onClick={() => { if (mouseDownOnBackdrop.current) setShowComingSoon(false) }}
         >
           <div
             style={{

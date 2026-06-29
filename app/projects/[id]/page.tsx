@@ -53,7 +53,6 @@ export default async function ProjectPage({
         updatedAt: project.updatedAt,
       }}
       initialTasks={project.tasks}
-      taskCounts={project.taskCounts}
     />
   )
 }

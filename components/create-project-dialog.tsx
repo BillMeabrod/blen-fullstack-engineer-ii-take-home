@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
 interface Props {
@@ -9,16 +9,18 @@ interface Props {
 }
 
 export default function CreateProjectDialog({ isOpen, onClose }: Props) {
-  const router = useRouter()
+  const [createdId, setCreatedId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState('active')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
+  const mouseDownOnBackdrop = useRef(false)
 
   useEffect(() => {
     if (isOpen) {
+      setCreatedId(null)
       setName('')
       setDescription('')
       setStatus('active')
@@ -49,7 +51,7 @@ export default function CreateProjectDialog({ isOpen, onClose }: Props) {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), description: description || undefined }),
+        body: JSON.stringify({ name: name.trim(), description: description || undefined, status }),
       })
       const data = await res.json()
       if (res.status === 409) {
@@ -64,8 +66,7 @@ export default function CreateProjectDialog({ isOpen, onClose }: Props) {
         setError('Something went wrong. Please check your connection.')
         return
       }
-      onClose()
-      router.push(`/projects/${data.id}`)
+      setCreatedId(data.id)
     } catch {
       setError('Something went wrong. Please check your connection.')
     } finally {
@@ -84,7 +85,8 @@ export default function CreateProjectDialog({ isOpen, onClose }: Props) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '24px',
       }}
-      onClick={onClose}
+      onMouseDown={e => { mouseDownOnBackdrop.current = e.target === e.currentTarget }}
+      onClick={() => { if (mouseDownOnBackdrop.current) onClose() }}
     >
       <div
         style={{
@@ -108,6 +110,22 @@ export default function CreateProjectDialog({ isOpen, onClose }: Props) {
           >✕</button>
         </div>
 
+        {createdId ? (
+          <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-1)', marginBottom: 16 }}>Project created!</p>
+            <Link
+              href={`/projects/${createdId}`}
+              onClick={onClose}
+              style={{
+                display: 'inline-block', padding: '8px 20px', background: 'var(--accent)',
+                color: 'white', borderRadius: 5, fontSize: '11px', fontWeight: 700,
+                letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none',
+              }}
+            >
+              Open Project →
+            </Link>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit}>
           <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
@@ -155,6 +173,7 @@ export default function CreateProjectDialog({ isOpen, onClose }: Props) {
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   )

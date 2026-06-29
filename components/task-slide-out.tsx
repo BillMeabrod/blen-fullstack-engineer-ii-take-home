@@ -33,7 +33,6 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
   const [dueDate, setDueDate] = useState('')
   const [description, setDescription] = useState('')
   const [labels, setLabels] = useState<string[]>([])
-  const [aiLabels, setAiLabels] = useState<Set<string>>(new Set())
   const [newLabel, setNewLabel] = useState('')
   const [addingLabel, setAddingLabel] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -51,6 +50,7 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
   const [categorizeError, setCategorizeError] = useState<string | null>(null)
 
   const labelInputRef = useRef<HTMLInputElement>(null)
+  const mouseDownOnBackdrop = useRef(false)
 
   useEffect(() => {
     if (!task) return
@@ -60,7 +60,6 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
     setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '')
     setDescription(task.description ?? '')
     setLabels(task.labels ?? [])
-    setAiLabels(new Set())
     setPrioritySuggestion(null); setPriorityError(null)
     setCategorizeResult(null); setCategorizeError(null)
     setSaveError(null); setStatusError(null)
@@ -119,10 +118,6 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
       const data = await res.json()
       const category: string = data.categorization.category
       const alreadyPresent = labels.includes(category)
-      if (!alreadyPresent) {
-        setLabels(prev => [...prev, category])
-        setAiLabels(prev => new Set([...prev, category]))
-      }
       setCategorizeResult({ ...data.categorization, alreadyPresent })
     } catch (err) {
       setCategorizeError(err instanceof Error ? err.message : 'Something went wrong. Please check your connection.')
@@ -132,8 +127,10 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
   }
 
   function removeLabel(label: string) {
-    if (aiLabels.has(label)) return
     setLabels(prev => prev.filter(l => l !== label))
+    if (categorizeResult && categorizeResult.category === label) {
+      setCategorizeResult(prev => prev ? { ...prev, alreadyPresent: false } : null)
+    }
   }
 
   function addLabel(label: string) {
@@ -233,7 +230,7 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
               padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0,
             }}>
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-1)' }}>Task Detail</span>
-              <button onClick={onClose} style={closeBtn}>✕</button>
+              <button type="button" aria-label="Close task details" onClick={onClose} style={closeBtn}>✕</button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -244,7 +241,6 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
                 Created {formatDate(task.createdAt)} · Updated {formatDate(task.updatedAt)}
               </div>
 
-              {/* Fields Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ padding: '14px 20px', borderRight: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
                   <div style={fieldLabelStyle}>Status</div>
@@ -313,34 +309,26 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
                 </div>
               </div>
 
-              {/* Labels */}
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
                 <div style={sectionLabelStyle}>Labels</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                  {labels.map(label => {
-                    const isAi = aiLabels.has(label)
-                    return (
-                      <span
-                        key={label}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          padding: '3px 8px', borderRadius: 3,
-                          fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
-                          background: 'rgba(188,140,255,0.15)', color: 'var(--purple)',
-                        }}
-                      >
-                        {label}
-                        {isAi ? (
-                          <span style={{ fontSize: '10px', opacity: 0.5 }} title="AI-assigned">🔒</span>
-                        ) : (
-                          <button
-                            onClick={() => removeLabel(label)}
-                            style={{ cursor: 'pointer', opacity: 0.6, fontSize: '11px', background: 'none', border: 'none', color: 'inherit', lineHeight: 1, padding: 0 }}
-                          >✕</button>
-                        )}
-                      </span>
-                    )
-                  })}
+                  {labels.map(label => (
+                    <span
+                      key={label}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        padding: '3px 8px', borderRadius: 3,
+                        fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+                        background: 'rgba(188,140,255,0.15)', color: 'var(--purple)',
+                      }}
+                    >
+                      {label}
+                      <button
+                        onClick={() => removeLabel(label)}
+                        style={{ cursor: 'pointer', opacity: 0.6, fontSize: '11px', background: 'none', border: 'none', color: 'inherit', lineHeight: 1, padding: 0 }}
+                      >✕</button>
+                    </span>
+                  ))}
 
                   {addingLabel ? (
                     <input
@@ -373,11 +361,23 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
                       AI Categorization
                     </div>
                     {categorizeResult.alreadyPresent ? (
-                      <span style={{ color: 'var(--text-2)' }}>Already categorized as <strong style={{ textTransform: 'capitalize' }}>{categorizeResult.category}</strong></span>
+                      <span style={{ color: 'var(--text-2)' }}>Already in labels: <strong style={{ textTransform: 'capitalize' }}>{categorizeResult.category}</strong></span>
                     ) : (
-                      <span>
-                        <strong style={{ color: 'var(--text-1)', textTransform: 'capitalize' }}>{categorizeResult.category}</strong>
-                        {' · '}{Math.round(categorizeResult.confidence * 100)}% confidence — added to labels
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span>
+                          <strong style={{ color: 'var(--text-1)', textTransform: 'capitalize' }}>{categorizeResult.category}</strong>
+                          {' · '}{Math.round(categorizeResult.confidence * 100)}% confidence
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            addLabel(categorizeResult.category)
+                            setCategorizeResult(prev => prev ? { ...prev, alreadyPresent: true } : null)
+                          }}
+                          style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '11px', fontWeight: 600, cursor: 'pointer', padding: 0, whiteSpace: 'nowrap' }}
+                        >
+                          + Add label
+                        </button>
                       </span>
                     )}
                   </div>
@@ -393,7 +393,6 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
                 </button>
               </div>
 
-              {/* Description */}
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
                 <div style={sectionLabelStyle}>Description</div>
                 <textarea
@@ -421,17 +420,7 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               flexShrink: 0, background: 'var(--surface)',
             }}>
-              {showDeleteConfirm ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-2)' }}>Are you sure? This cannot be undone.</span>
-                  <button onClick={handleDelete} disabled={deleting} style={{ ...btnDangerStyle, borderColor: 'var(--accent)' }}>
-                    {deleting ? 'Deleting...' : 'Confirm'}
-                  </button>
-                  <button onClick={() => setShowDeleteConfirm(false)} style={btnSecondaryStyle}>Cancel</button>
-                </div>
-              ) : (
-                <button onClick={() => setShowDeleteConfirm(true)} style={btnDangerStyle}>Delete task</button>
-              )}
+              <button onClick={() => setShowDeleteConfirm(true)} style={btnDangerStyle}>Delete task</button>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={onClose} style={btnSecondaryStyle}>Cancel</button>
                 <button onClick={handleSave} disabled={saving} style={btnPrimaryStyle}>
@@ -439,6 +428,46 @@ export default function TaskSlideOut({ task, onClose, onSave, onDelete }: Props)
                 </button>
               </div>
             </div>
+
+            {showDeleteConfirm && (
+              <div
+                style={{
+                  position: 'fixed', inset: 0,
+                  background: 'rgba(0,0,0,0.75)',
+                  zIndex: 300,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '24px',
+                }}
+                onMouseDown={e => { mouseDownOnBackdrop.current = e.target === e.currentTarget }}
+                onClick={() => { if (mouseDownOnBackdrop.current) setShowDeleteConfirm(false) }}
+              >
+                <div
+                  style={{
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: '10px', width: '100%', maxWidth: '400px', overflow: 'hidden',
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div style={{ padding: '24px 24px 16px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-1)', marginBottom: 8 }}>
+                      Delete task?
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.6 }}>
+                      This cannot be undone.
+                    </p>
+                  </div>
+                  <div style={{
+                    padding: '14px 24px', borderTop: '1px solid var(--border)',
+                    display: 'flex', justifyContent: 'flex-end', gap: 8,
+                  }}>
+                    <button onClick={() => setShowDeleteConfirm(false)} style={btnSecondaryStyle}>Cancel</button>
+                    <button onClick={handleDelete} disabled={deleting} style={btnDangerConfirmStyle}>
+                      {deleting ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -465,7 +494,7 @@ const fieldSelectStyle: React.CSSProperties = {
   width: '100%', appearance: 'none', outline: 'none',
 }
 const fieldInputStyle: React.CSSProperties = {
-  background: 'transparent', border: '1px solid var(--border)', borderRadius: 5,
+  background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 5,
   color: 'var(--text-1)', fontSize: '12px', padding: '4px 8px', width: '100%', outline: 'none',
 }
 const aiTextBtn: React.CSSProperties = {
@@ -497,4 +526,9 @@ const btnSecondaryStyle: React.CSSProperties = {
 const btnDangerStyle: React.CSSProperties = {
   padding: '6px 14px', background: 'transparent', border: '1px solid rgba(218,35,41,0.4)',
   color: 'var(--accent)', borderRadius: 5, fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+}
+const btnDangerConfirmStyle: React.CSSProperties = {
+  padding: '6px 16px', background: 'var(--accent)', border: 'none',
+  color: 'white', borderRadius: 5, fontSize: '11px', fontWeight: 700,
+  letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer',
 }

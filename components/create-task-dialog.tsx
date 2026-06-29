@@ -28,6 +28,7 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose, onSuccess
   const [prioritySuggestion, setPrioritySuggestion] = useState<PrioritySuggestion | null>(null)
   const [priorityError, setPriorityError] = useState<string | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
+  const mouseDownOnBackdrop = useRef(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -46,7 +47,7 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose, onSuccess
     return () => window.removeEventListener('keydown', handleKey)
   }, [isOpen, onClose])
 
-  async function handleTitleBlur() {
+  async function handleSuggestPriority() {
     if (!title.trim()) return
     setPriorityLoading(true)
     setPrioritySuggestion(null)
@@ -105,7 +106,8 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose, onSuccess
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
         zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
       }}
-      onClick={onClose}
+      onMouseDown={e => { mouseDownOnBackdrop.current = e.target === e.currentTarget }}
+      onClick={() => { if (mouseDownOnBackdrop.current) onClose() }}
     >
       <div
         style={{
@@ -132,7 +134,6 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose, onSuccess
                 type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                onBlur={handleTitleBlur}
                 placeholder="Task title"
                 style={inputStyle}
               />
@@ -158,12 +159,18 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose, onSuccess
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
               </select>
-              {priorityLoading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                  <div style={spinnerStyle} />
-                  <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>Analyzing...</span>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={handleSuggestPriority}
+                disabled={priorityLoading || !title.trim()}
+                style={{ ...aiTextBtn, visibility: title.trim() ? 'visible' : 'hidden' }}
+              >
+                {priorityLoading ? (
+                  <><div style={spinnerStyle} /><span>Analyzing...</span></>
+                ) : (
+                  <span>✦ Suggest priority</span>
+                )}
+              </button>
               {prioritySuggestion && !priorityLoading && (
                 <div style={aiResultStyle}>
                   <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
@@ -235,6 +242,12 @@ const btnSecondaryStyle: React.CSSProperties = {
   padding: '6px 16px', background: 'transparent', color: 'var(--text-2)',
   border: '1px solid var(--border)', borderRadius: '5px', fontSize: '11px',
   fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
+}
+const aiTextBtn: React.CSSProperties = {
+  background: 'none', border: 'none', color: 'var(--accent)',
+  fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+  padding: 0, marginTop: 6, display: 'flex', alignItems: 'center', gap: 5,
+  letterSpacing: '0.03em',
 }
 const aiResultStyle: React.CSSProperties = {
   marginTop: 8, padding: '10px 12px', background: 'var(--surface)',

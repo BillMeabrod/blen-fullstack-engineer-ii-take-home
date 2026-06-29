@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import AiSummaryModal from './ai-summary-modal'
 import CreateProjectDialog from './create-project-dialog'
@@ -46,9 +45,14 @@ const FILTERS = [
   { label: 'Archived', value: 'archived' },
 ]
 
+function filterHref(value: string) {
+  return value === 'all' ? '/' : `/?status=${value}`
+}
+
 function ProjectRow({ project }: { project: Project }) {
   const [hovered, setHovered] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
+  const [btnHovered, setBtnHovered] = useState(false)
 
   return (
     <>
@@ -67,36 +71,38 @@ function ProjectRow({ project }: { project: Project }) {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {/* Full-row link sits behind all content */}
-        <Link
-          href={`/projects/${project.id}`}
-          style={{ position: 'absolute', inset: 0 }}
-          aria-label={`View project ${project.name}`}
-        />
-        <div style={{ position: 'relative', fontSize: '13px', fontWeight: 600, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <Link href={`/projects/${project.id}`} style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+          <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
+            View project {project.name}
+          </span>
+        </Link>
+        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {project.name}
         </div>
-        <div style={{ position: 'relative', fontSize: '12px', color: 'var(--text-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {project.description ?? ''}
         </div>
-        <div style={{ position: 'relative' }}>{statusBadge(project.status)}</div>
-        <div style={{ position: 'relative', fontSize: '13px', fontWeight: 600, color: 'var(--text-2)' }}>{project.taskCount}</div>
-        <div style={{ position: 'relative' }}>
+        <div>{statusBadge(project.status)}</div>
+        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-2)' }}>{project.taskCount}</div>
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <button
+            type="button"
             onClick={() => setSummaryOpen(true)}
+            onMouseEnter={() => setBtnHovered(true)}
+            onMouseLeave={() => setBtnHovered(false)}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               fontSize: '11px', fontWeight: 600, color: 'var(--accent)',
-              cursor: 'pointer', background: 'none',
+              cursor: 'pointer',
+              background: btnHovered ? 'rgba(218,35,41,0.1)' : 'none',
               border: '1px solid var(--accent)', borderRadius: 4, padding: '4px 10px',
-              transition: 'all 0.12s', whiteSpace: 'nowrap',
+              transition: 'background 0.12s', whiteSpace: 'nowrap',
             }}
           >
             ✦ How&apos;s this going?
           </button>
         </div>
         <div style={{
-          position: 'relative',
           fontSize: '11px', fontWeight: 600, color: 'var(--text-3)',
           letterSpacing: '0.04em', textTransform: 'uppercase',
           textAlign: 'right', opacity: hovered ? 1 : 0, transition: 'opacity 0.12s',
@@ -117,12 +123,10 @@ function ProjectRow({ project }: { project: Project }) {
 }
 
 export default function ProjectListClient({ projects, currentStatus }: Props) {
-  const router = useRouter()
   const [showCreateProject, setShowCreateProject] = useState(false)
 
   return (
     <>
-      {/* Hero */}
       <div style={{ padding: '56px 48px 80px' }}>
         <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 12 }}>
           Workspace
@@ -135,35 +139,35 @@ export default function ProjectListClient({ projects, currentStatus }: Props) {
         </p>
       </div>
 
-      {/* Surface Card */}
       <div style={{
         background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px',
         margin: '-36px 48px 48px', overflow: 'hidden',
       }}>
-        {/* Toolbar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '14px 20px', borderBottom: '1px solid var(--border)', gap: 12,
         }}>
           <div style={{ display: 'flex', gap: 6 }}>
             {FILTERS.map(f => (
-              <button
+              <Link
                 key={f.value}
-                onClick={() => router.push(f.value === 'all' ? '/' : `/?status=${f.value}`)}
+                href={filterHref(f.value)}
                 style={{
+                  display: 'inline-block',
                   padding: '5px 12px', borderRadius: 5,
                   fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
                   border: '1px solid var(--border)',
                   background: currentStatus === f.value ? 'var(--accent)' : 'transparent',
                   color: currentStatus === f.value ? 'white' : 'var(--text-2)',
-                  cursor: 'pointer',
+                  textDecoration: 'none',
                 }}
               >
                 {f.label}
-              </button>
+              </Link>
             ))}
           </div>
           <button
+            type="button"
             onClick={() => setShowCreateProject(true)}
             style={{
               padding: '6px 16px', background: 'var(--accent)', color: 'white', border: 'none',
@@ -175,7 +179,6 @@ export default function ProjectListClient({ projects, currentStatus }: Props) {
           </button>
         </div>
 
-        {/* Table Header */}
         <div style={{
           display: 'grid', gridTemplateColumns: '180px 1fr 100px 80px 160px 80px',
           padding: '8px 20px', borderBottom: '1px solid var(--border)',
@@ -188,7 +191,6 @@ export default function ProjectListClient({ projects, currentStatus }: Props) {
           ))}
         </div>
 
-        {/* Rows */}
         {projects.map(project => (
           <ProjectRow key={project.id} project={project} />
         ))}

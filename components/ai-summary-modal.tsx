@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type Health = 'on_track' | 'needs_attention' | 'completed'
 
@@ -64,6 +64,7 @@ export default function AiSummaryModal({ projectId, projectName, onClose }: Prop
     return () => window.removeEventListener('keydown', handleKey)
   }, [onClose])
 
+  const mouseDownOnBackdrop = useRef(false)
   const health = result?.summary.health ?? 'on_track'
   const healthStyle = healthColors[health]
 
@@ -76,9 +77,13 @@ export default function AiSummaryModal({ projectId, projectName, onClose }: Prop
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '24px',
       }}
-      onClick={onClose}
+      onMouseDown={e => { mouseDownOnBackdrop.current = e.target === e.currentTarget }}
+      onClick={() => { if (mouseDownOnBackdrop.current) onClose() }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="AI Project Summary"
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',

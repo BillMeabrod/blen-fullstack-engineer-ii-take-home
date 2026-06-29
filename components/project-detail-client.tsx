@@ -1,18 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Task } from '@/lib/schema'
 import AiSummaryModal from './ai-summary-modal'
 import CreateTaskDialog from './create-task-dialog'
 import TaskSlideOut from './task-slide-out'
-
-interface TaskCounts {
-  total: number
-  open: number
-  in_progress: number
-  in_review: number
-  completed: number
-}
 
 interface Project {
   id: string
@@ -26,7 +18,6 @@ interface Project {
 interface Props {
   project: Project
   initialTasks: Task[]
-  taskCounts: TaskCounts
 }
 
 type TaskFilter = 'all' | 'open' | 'in_progress' | 'in_review' | 'completed'
@@ -77,6 +68,14 @@ export default function ProjectDetailClient({ project, initialTasks }: Props) {
   const [showCreateTask, setShowCreateTask] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
   const [descExpanded, setDescExpanded] = useState(false)
+  const [descTruncated, setDescTruncated] = useState(false)
+  const [summaryBtnHovered, setSummaryBtnHovered] = useState(false)
+  const descRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = descRef.current
+    if (el) setDescTruncated(el.scrollHeight > el.clientHeight)
+  }, [project.description])
 
   const taskCounts = {
     total: tasks.length,
@@ -116,7 +115,6 @@ export default function ProjectDetailClient({ project, initialTasks }: Props) {
 
   return (
     <>
-      {/* Hero */}
       <div style={{
         display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
         padding: '56px 48px 80px', flexWrap: 'wrap', gap: 24,
@@ -134,51 +132,58 @@ export default function ProjectDetailClient({ project, initialTasks }: Props) {
         </div>
         <button
           onClick={() => setShowSummary(true)}
+          onMouseEnter={() => setSummaryBtnHovered(true)}
+          onMouseLeave={() => setSummaryBtnHovered(false)}
           style={{
-            padding: '10px 20px', background: 'transparent', border: '1px solid var(--accent)',
+            padding: '10px 20px',
+            background: summaryBtnHovered ? 'rgba(218,35,41,0.1)' : 'transparent',
+            border: '1px solid var(--accent)',
             color: 'var(--accent)', borderRadius: 6, fontSize: '11px', fontWeight: 700,
             letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
+            transition: 'background 0.12s',
           }}
         >
           ✦ How&apos;s this going?
         </button>
       </div>
 
-      {/* Surface Card */}
       <div style={{
         background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px',
         margin: '-36px 48px 48px', overflow: 'hidden',
       }}>
-        {/* Description */}
         {project.description && (
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
             <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 6 }}>
               Description
             </div>
-            <div style={{
-              fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.6,
-              overflow: descExpanded ? 'visible' : 'hidden',
-              display: descExpanded ? 'block' : '-webkit-box',
-              WebkitLineClamp: descExpanded ? undefined : 2,
-              WebkitBoxOrient: 'vertical' as const,
-            }}>
-              {project.description}
-            </div>
-            <button
-              onClick={() => setDescExpanded(e => !e)}
+            <div
+              ref={descRef}
               style={{
-                fontSize: '11px', color: 'var(--accent)', cursor: 'pointer',
-                marginTop: 4, display: 'inline-block', background: 'none', border: 'none',
-                padding: 0, fontWeight: 600,
+                fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.6,
+                overflow: descExpanded ? 'visible' : 'hidden',
+                display: descExpanded ? 'block' : '-webkit-box',
+                WebkitLineClamp: descExpanded ? undefined : 2,
+                WebkitBoxOrient: 'vertical' as const,
               }}
             >
-              {descExpanded ? 'Show less' : 'Show more'}
-            </button>
+              {project.description}
+            </div>
+            {(descTruncated || descExpanded) && (
+              <button
+                onClick={() => setDescExpanded(e => !e)}
+                style={{
+                  fontSize: '11px', color: 'var(--accent)', cursor: 'pointer',
+                  marginTop: 4, display: 'inline-block', background: 'none', border: 'none',
+                  padding: 0, fontWeight: 600,
+                }}
+              >
+                {descExpanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
           </div>
         )}
 
-        {/* Counts Bar */}
         <div style={{ display: 'flex', padding: '16px 20px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
           {[
             { label: 'Total', value: taskCounts.total, color: 'var(--text-1)' },
@@ -200,7 +205,6 @@ export default function ProjectDetailClient({ project, initialTasks }: Props) {
           ))}
         </div>
 
-        {/* Task Toolbar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 20px', borderBottom: '1px solid var(--border)', gap: 12, flexWrap: 'wrap',
@@ -235,20 +239,18 @@ export default function ProjectDetailClient({ project, initialTasks }: Props) {
           </button>
         </div>
 
-        {/* Task Table Header */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '16px 1fr 100px 80px 1fr 80px',
+          display: 'grid', gridTemplateColumns: '130px 1fr 100px 80px 1fr 80px',
           alignItems: 'center', padding: '8px 20px', borderBottom: '1px solid var(--border)',
           background: 'var(--surface-2)', gap: 12,
         }}>
-          {['', 'Task', 'Assignee', 'Priority', 'Labels', 'Due'].map((col, i) => (
+          {['Status', 'Task', 'Assignee', 'Priority', 'Labels', 'Due'].map((col, i) => (
             <div key={i} style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
               {col}
             </div>
           ))}
         </div>
 
-        {/* Task Rows Grouped */}
         {grouped.map(group => (
           <div key={group.status}>
             <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
@@ -312,14 +314,19 @@ function TaskRow({ task, onClick }: { task: Task; onClick: () => void }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'grid', gridTemplateColumns: '16px 1fr 100px 80px 1fr 80px',
+        display: 'grid', gridTemplateColumns: '130px 1fr 100px 80px 1fr 80px',
         alignItems: 'center', padding: '10px 20px', borderBottom: '1px solid var(--border)',
         gap: 12, cursor: 'pointer', opacity: isCompleted ? 0.55 : 1,
         background: hovered ? 'var(--surface-2)' : 'transparent',
         transition: 'background 0.1s',
       }}
     >
-      <DotStatus status={task.status} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <DotStatus status={task.status} />
+        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+          {STATUS_LABELS[task.status]}
+        </span>
+      </div>
       <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {task.title}
       </div>
