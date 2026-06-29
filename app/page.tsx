@@ -1,28 +1,34 @@
-// TODO: This is a Server Component — fetch projects directly from the database
-// or via your API, then render them here. No "use client" needed for the list.
-//
-// Use `next/link` for navigation to /projects/[id] and a client component for
-// the "Create Project" dialog.
+import { headers } from 'next/headers'
+import ProjectListClient from '@/components/project-list-client'
 
-export default function Page() {
-  return (
-    <main className="min-h-screen p-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Task Tracker</h1>
-            <p className="mt-1 text-muted-foreground">
-              Manage projects and tasks with AI-powered insights
-            </p>
-          </div>
-          {/* TODO: Add a <CreateProjectDialog /> client component here */}
-        </div>
+interface Project {
+  id: string
+  name: string
+  description: string | null
+  status: 'active' | 'completed' | 'archived'
+  createdAt: string
+  updatedAt: string
+  taskCount: number
+}
 
-        {/* TODO: Fetch and display projects as cards that link to /projects/[id] */}
-        <p className="text-muted-foreground">
-          Replace this with your project list.
-        </p>
-      </div>
-    </main>
-  )
+async function getProjects(status?: string): Promise<Project[]> {
+  const headersList = await headers()
+  const host = headersList.get('host') ?? 'localhost:3000'
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
+  const url = new URL('/api/projects', `${protocol}://${host}`)
+  if (status && status !== 'all') url.searchParams.set('status', status)
+  const res = await fetch(url.toString(), { cache: 'no-store' })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>
+}) {
+  const { status } = await searchParams
+  const projects = await getProjects(status)
+
+  return <ProjectListClient projects={projects} currentStatus={status ?? 'all'} />
 }

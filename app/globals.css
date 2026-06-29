@@ -121,8 +121,30 @@
     }
   body {
     @apply bg-background text-foreground;
+    background: var(--bg);
+    color: var(--text-1);
     }
   html {
     @apply font-sans;
     }
+}
+
+:root {
+  --bg:         #0D1117;
+  --surface:    #161B22;
+  --surface-2:  #1C2128;
+  --border:     #21262D;
+  --accent:     #da2329;
+  --accent-dim: #b01c21;
+  --text-1:     #F0F6FC;
+  --text-2:     #8B949E;
+  --text-3:     #6E7681;
+  --green:      #3FB950;
+  --yellow:     #D29922;
+  --blue:       #58A6FF;
+  --purple:     #BC8CFF;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

@@ -1,6 +1,34 @@
-// TODO: This is an async Server Component — get the project id from params,
-// fetch the project, and render a client component for the interactive
-// task management and AI features.
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import type { Task } from '@/lib/schema'
+import ProjectDetailClient from '@/components/project-detail-client'
+
+interface ProjectDetail {
+  id: string
+  name: string
+  description: string | null
+  status: string
+  createdAt: string
+  updatedAt: string
+  tasks: Task[]
+  taskCounts: {
+    total: number
+    open: number
+    in_progress: number
+    in_review: number
+    completed: number
+  }
+}
+
+async function getProject(id: string): Promise<ProjectDetail | null> {
+  const headersList = await headers()
+  const host = headersList.get('host') ?? 'localhost:3000'
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
+  const res = await fetch(`${protocol}://${host}/api/projects/${id}`, { cache: 'no-store' })
+  if (res.status === 404) return null
+  if (!res.ok) return null
+  return res.json()
+}
 
 export default async function ProjectPage({
   params,
@@ -8,14 +36,24 @@ export default async function ProjectPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const project = await getProject(id)
+
+  if (!project) {
+    redirect('/')
+  }
 
   return (
-    <main className="min-h-screen p-8">
-      <h1 className="mb-8 text-3xl font-bold">Project Detail</h1>
-      <p className="text-muted-foreground">Project ID: {id}</p>
-      <p className="text-muted-foreground">
-        Replace this with your project detail view, including AI features.
-      </p>
-    </main>
+    <ProjectDetailClient
+      project={{
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        status: project.status,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+      }}
+      initialTasks={project.tasks}
+      taskCounts={project.taskCounts}
+    />
   )
 }

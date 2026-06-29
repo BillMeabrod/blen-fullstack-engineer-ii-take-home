@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
+import Nav from "@/components/nav"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -33,8 +33,9 @@ export default function RootLayout({
         inter.variable
       )}
     >
-      <body suppressHydrationWarning>
-        <ThemeProvider>{children}</ThemeProvider>
+      <body suppressHydrationWarning style={{ background: 'var(--bg)', color: 'var(--text-1)', minHeight: '100vh' }}>
+        <Nav />
+        {children}
       </body>
     </html>
   )
