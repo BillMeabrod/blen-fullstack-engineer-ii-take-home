@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blen Task Tracker — Mockup</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0D1117;
+      --surface:    #161B22;
+      --surface-2:  #1C2128;
+      --border:     #21262D;
+      --accent:     #da2329;
+      --accent-dim: #b01c21;
+      --text-1:     #F0F6FC;
+      --text-2:     #8B949E;
+      --text-3:     #6E7681;
+      --green:      #3FB950;
+      --yellow:     #D29922;
+      --blue:       #58A6FF;
+      --purple:     #BC8CFF;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 100;
+    }
+
+    .logo img { height: 28px; width: auto; display: block; }
+    .nav-links { display: flex; gap: 0; list-style: none; }
+    .nav-links a {
+      display: block;
+      padding: 0 18px;
+      height: 56px;
+      line-height: 56px;
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: color 0.15s;
+      cursor: pointer;
+    }
+    .nav-links a:hover { color: var(--text-1); }
+    .nav-links a.active { color: var(--text-1); border-bottom: 2px solid var(--accent); }
+
+    .hero { padding: 56px 48px 80px; }
+    .hero-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+    .hero h1 { font-size: 40px; font-weight: 800; letter-spacing: -1px; color: var(--text-1); margin-bottom: 10px; }
+    .hero p { font-size: 14px; color: var(--text-2); }
+
+    .hero-actions {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 56px 48px 80px;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    .hero-left .hero-eyebrow { margin-bottom: 12px; }
+    .hero-left h1 { font-size: 40px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+    .hero-left p { font-size: 14px; color: var(--text-2); }
+
+    .surface-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin: -36px 48px 48px;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+
+    .filter-group { display: flex; gap: 6px; }
+
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .filter-btn:hover { border-color: var(--text-2); color: var(--text-1); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+    .btn-primary {
+      padding: 6px 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s;
+    }
+    .btn-primary:hover { background: var(--accent-dim); }
+
+    .btn-secondary {
+      padding: 6px 16px;
+      background: transparent;
+      color: var(--text-2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s;
+    }
+    .btn-secondary:hover { border-color: var(--text-2); color: var(--text-1); }
+
+    .btn-summarize {
+      padding: 10px 20px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-summarize:hover { background: var(--accent); color: white; }
+
+    .th { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+
+    /* PROJECT LIST */
+    .project-table-header {
+      display: grid;
+      grid-template-columns: 180px 1fr 100px 80px 160px 80px;
+      padding: 8px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+      gap: 16px;
+    }
+
+    .project-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 100px 80px 160px 80px;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+      gap: 16px;
+    }
+    .project-row:last-child { border-bottom: none; }
+    .project-row:hover { background: var(--surface-2); }
+
+    .project-name { font-size: 13px; font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .project-description { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .status-badge {
+      display: inline-flex;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .status-active    { background: rgba(63,185,80,0.15);   color: var(--green);  }
+    .status-completed { background: rgba(88,166,255,0.15);  color: var(--blue);   }
+    .status-archived  { background: rgba(110,118,129,0.15); color: var(--text-3); }
+
+    .task-count { font-size: 13px; font-weight: 600; color: var(--text-2); }
+
+    .ai-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      background: none;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 4px 10px;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .ai-link:hover { background: var(--accent); color: white; }
+
+    .view-link { font-size: 11px; font-weight: 600; color: var(--text-3); letter-spacing: 0.04em; text-transform: uppercase; transition: color 0.12s; text-align: right; opacity: 0; }
+    .project-row:hover .view-link { opacity: 1; color: var(--text-1); }
+
+    /* DESCRIPTION SECTION */
+    .description-section {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .description-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 6px; }
+    .description-text {
+      font-size: 13px; color: var(--text-2); line-height: 1.6;
+      overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .description-text.expanded { display: block; }
+    .description-toggle { font-size: 11px; color: var(--accent); cursor: pointer; margin-top: 4px; display: inline-block; background: none; border: none; padding: 0; font-weight: 600; }
+    .description-toggle:hover { text-decoration: underline; }
+
+    /* COUNTS BAR */
+    .counts-bar { display: flex; gap: 0; padding: 16px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .count-item { display: flex; align-items: center; gap: 10px; padding: 0 20px 0 0; margin-right: 20px; border-right: 1px solid var(--border); }
+    .count-item:last-child { border-right: none; }
+    .count-number { font-size: 22px; font-weight: 800; color: var(--text-1); line-height: 1; }
+    .count-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+
+    /* TASK TABLE */
+    .task-table-header {
+      display: grid;
+      grid-template-columns: 16px 1fr 100px 80px 1fr 80px;
+      align-items: center;
+      padding: 8px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+      gap: 12px;
+    }
+
+    .task-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .task-row {
+      display: grid;
+      grid-template-columns: 16px 1fr 100px 80px 1fr 80px;
+      align-items: center;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      transition: background 0.1s;
+      cursor: pointer;
+    }
+    .task-row:last-child { border-bottom: none; }
+    .task-row:hover { background: var(--surface-2); }
+
+    .task-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-open        { background: transparent; border: 1.5px solid var(--text-3); }
+    .dot-in-progress { background: var(--yellow); }
+    .dot-in-review   { background: var(--purple); }
+    .dot-completed   { background: var(--green); }
+
+    .task-title { font-size: 13px; font-weight: 500; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .priority-badge { display: inline-flex; padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .priority-critical { background: rgba(218,35,41,0.2);   color: var(--accent); }
+    .priority-high     { background: rgba(210,153,34,0.2);  color: var(--yellow); }
+    .priority-medium   { background: rgba(88,166,255,0.15); color: var(--blue);   }
+    .priority-low      { background: rgba(110,118,129,0.15);color: var(--text-3); }
+
+    .labels-cell { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
+    .label-tag { display: inline-flex; padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; background: rgba(188,140,255,0.15); color: var(--purple); white-space: nowrap; }
+    .label-more { font-size: 10px; color: var(--text-3); white-space: nowrap; }
+
+    .section-row { padding: 8px 20px; border-bottom: 1px solid var(--border); background: var(--bg); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+
+    /* PAGE DIVIDER */
+    .page-divider { border: none; border-top: 3px dashed var(--border); margin: 48px 0; }
+    .page-label { text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); margin: -10px 0 0; }
+
+    /* ============================================================
+       SLIDE-OUT PANEL
+    ============================================================ */
+    .slideout-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .slideout-backdrop.open { opacity: 1; pointer-events: all; }
+
+    .slideout-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 480px;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 160;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+    .slideout-panel.open { transform: translateX(0); }
+
+    .slideout-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .slideout-title { font-size: 13px; font-weight: 700; color: var(--text-1); }
+
+    .slideout-close {
+      width: 28px; height: 28px;
+      border-radius: 5px;
+      background: transparent;
+      border: none;
+      color: var(--text-3);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.12s;
+    }
+    .slideout-close:hover { background: var(--surface-2); color: var(--text-1); }
+
+    .slideout-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    /* TASK TITLE SECTION */
+    .slideout-task-title {
+      padding: 20px 20px 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-1);
+      line-height: 1.3;
+    }
+
+    .slideout-task-meta {
+      padding: 6px 20px 16px;
+      font-size: 11px;
+      color: var(--text-3);
+      letter-spacing: 0.02em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* FIELD ROWS */
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field-item {
+      padding: 14px 20px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .field-item:nth-child(even) { border-right: none; }
+    .field-item:nth-last-child(-n+2) { border-bottom: none; }
+
+    .field-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ai-text {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.03em;
+      opacity: 0.8;
+      transition: opacity 0.12s;
+    }
+    .btn-ai-text:hover { opacity: 1; text-decoration: underline; }
+
+    .spinner-inline {
+      width: 10px;
+      height: 10px;
+      border: 1.5px solid rgba(218,35,41,0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+      flex-shrink: 0;
+    }
+    .spinner-inline.visible { display: block; }
+
+    .field-value { font-size: 13px; color: var(--text-1); }
+
+    .field-select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text-1);
+      font-size: 12px;
+      padding: 4px 8px;
+      cursor: pointer;
+      width: 100%;
+      appearance: none;
+    }
+    .field-select:focus { outline: none; border-color: var(--accent); }
+    .field-select option { background: var(--surface-2); color: var(--text-1); }
+
+    .field-input {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text-1);
+      font-size: 12px;
+      padding: 4px 8px;
+      width: 100%;
+    }
+    .field-input:focus { outline: none; border-color: var(--accent); }
+
+    /* DESCRIPTION IN PANEL */
+    .slideout-section {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .slideout-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+
+    .slideout-description {
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.7;
+      min-height: 80px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      width: 100%;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .slideout-description:focus { outline: none; border-color: var(--accent); }
+
+    /* AI ACTIONS */
+    .ai-actions-section {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+
+    .ai-actions-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; }
+
+    .ai-actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .btn-ai-action {
+      padding: 7px 14px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-ai-action:hover { background: var(--accent); color: white; }
+
+    .ai-result {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--accent);
+      border-radius: 5px;
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.5;
+      display: none;
+    }
+    .ai-result.visible { display: block; }
+    .ai-result-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+
+    /* LABELS IN PANEL */
+    .labels-edit {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .label-tag-edit {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: rgba(188,140,255,0.15);
+      color: var(--purple);
+    }
+
+    .label-remove {
+      cursor: pointer;
+      opacity: 0.6;
+      font-size: 11px;
+      line-height: 1;
+    }
+    .label-remove:hover { opacity: 1; }
+
+    .label-add {
+      padding: 3px 8px;
+      border: 1px dashed var(--border);
+      border-radius: 3px;
+      font-size: 10px;
+      color: var(--text-3);
+      cursor: pointer;
+      background: none;
+      transition: all 0.12s;
+    }
+    .label-add:hover { border-color: var(--text-2); color: var(--text-1); }
+
+    /* TIMESTAMPS */
+    .timestamps {
+      padding: 12px 20px;
+      display: flex;
+      gap: 24px;
+    }
+    .timestamp-item { font-size: 11px; color: var(--text-3); }
+    .timestamp-item span { color: var(--text-2); }
+
+    /* SLIDEOUT FOOTER */
+    .slideout-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      background: var(--surface);
+    }
+
+    .btn-danger {
+      padding: 6px 14px;
+      background: transparent;
+      border: 1px solid rgba(218,35,41,0.4);
+      color: var(--accent);
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .btn-danger:hover { background: rgba(218,35,41,0.1); border-color: var(--accent); }
+
+    /* MODALS */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; width: 100%; max-width: 480px; overflow: hidden; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 14px; font-weight: 700; color: var(--text-1); }
+    .modal-close { width: 24px; height: 24px; border-radius: 4px; background: transparent; border: none; color: var(--text-3); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+    .modal-close:hover { background: var(--surface-2); color: var(--text-1); }
+    .modal-body { padding: 24px 20px; }
+    .placeholder-icon { font-size: 32px; margin-bottom: 12px; display: block; text-align: center; }
+    .placeholder-title { font-size: 16px; font-weight: 700; color: var(--text-1); text-align: center; margin-bottom: 8px; }
+    .placeholder-desc { font-size: 13px; color: var(--text-2); text-align: center; line-height: 1.6; }
+    .summary-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+    .summary-project-name { font-size: 18px; font-weight: 700; color: var(--text-1); margin-bottom: 16px; }
+    .health-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .health-badge { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(63,185,80,0.15); color: var(--green); }
+    .summary-text { font-size: 13px; color: var(--text-2); line-height: 1.7; padding: 16px; background: var(--surface-2); border-radius: 6px; border-left: 2px solid var(--accent); }
+    .spinner-container { display: flex; flex-direction: column; align-items: center; padding: 32px 0; gap: 14px; }
+    .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-label { font-size: 12px; color: var(--text-3); letter-spacing: 0.04em; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo"><img src="/mnt/user-data/uploads/1000001443.png" alt="blen" /></div>
+    <ul class="nav-links">
+      <li><a href="#page1" class="active">Projects</a></li>
+      <li><a href="#" onclick="showPlaceholder('Team'); return false;">Team</a></li>
+      <li><a href="#" onclick="showPlaceholder('Settings'); return false;">Settings</a></li>
+    </ul>
+  </nav>
+
+  <!-- PAGE 1 — PROJECT LIST -->
+  <div id="page1">
+    <div class="hero">
+      <div class="hero-eyebrow">Workspace</div>
+      <h1>Projects</h1>
+      <p>Track work across your team. AI-assisted categorization, prioritization, and health summaries.</p>
+    </div>
+    <div class="surface-card">
+      <div class="toolbar">
+        <div class="filter-group">
+          <button class="filter-btn active">All</button>
+          <button class="filter-btn">Active</button>
+          <button class="filter-btn">Completed</button>
+          <button class="filter-btn">Archived</button>
+        </div>
+        <button class="btn-primary">+ New Project</button>
+      </div>
+      <div class="project-table-header">
+        <div class="th">Project</div>
+        <div class="th">Description</div>
+        <div class="th">Status</div>
+        <div class="th">Tasks</div>
+        <div class="th">AI Summary</div>
+        <div class="th"></div>
+      </div>
+      <div class="project-row" onclick="window.location='#page2'">
+        <div class="project-name">Platform Modernization</div>
+        <div class="project-description">Migrate all legacy auth, data, and infrastructure services to the new cloud cluster.</div>
+        <div><span class="status-badge status-active">Active</span></div>
+        <div class="task-count">14</div>
+        <div><button class="ai-link" onclick="event.stopPropagation(); showSummary('Platform Modernization')">✦ How's this going?</button></div>
+        <div class="view-link">View →</div>
+      </div>
+      <div class="project-row" onclick="window.location='#page2'">
+        <div class="project-name">AI Integration — Phase 1</div>
+        <div class="project-description">LLM-powered task categorization and prioritization across the engineering workflow.</div>
+        <div><span class="status-badge status-active">Active</span></div>
+        <div class="task-count">8</div>
+        <div><button class="ai-link" onclick="event.stopPropagation(); showSummary('AI Integration — Phase 1')">✦ How's this going?</button></div>
+        <div class="view-link">View →</div>
+      </div>
+      <div class="project-row">
+        <div class="project-name">Q1 Security Audit</div>
+        <div class="project-description">FedRAMP Moderate compliance review, penetration testing, and remediation.</div>
+        <div><span class="status-badge status-completed">Completed</span></div>
+        <div class="task-count">22</div>
+        <div><button class="ai-link" onclick="event.stopPropagation(); showSummary('Q1 Security Audit')">✦ How's this going?</button></div>
+        <div class="view-link">View →</div>
+      </div>
+      <div class="project-row">
+        <div class="project-name">Design System v2</div>
+        <div class="project-description">Component library refresh and full documentation pass.</div>
+        <div><span class="status-badge status-archived">Archived</span></div>
+        <div class="task-count">5</div>
+        <div><button class="ai-link" onclick="event.stopPropagation(); showSummary('Design System v2')">✦ How's this going?</button></div>
+        <div class="view-link">View →</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="page-divider" />
+  <p class="page-label">↓ Project Detail Page ↓</p>
+
+  <!-- PAGE 2 — PROJECT DETAIL -->
+  <div id="page2">
+    <div class="hero-actions">
+      <div class="hero-left">
+        <div class="hero-eyebrow">Project · Active</div>
+        <h1>Platform Modernization</h1>
+        <p>Started Jun 1, 2026 · Last updated Jun 28, 2026</p>
+      </div>
+      <button class="btn-summarize" onclick="showSummary('Platform Modernization')">✦ How's this going?</button>
+    </div>
+
+    <div class="surface-card">
+      <div class="description-section">
+        <div class="description-label">Description</div>
+        <div class="description-text" id="proj-desc">
+          Migrate all legacy auth, data, and infrastructure services to the new cloud cluster before the Q3 feature freeze. This includes decommissioning on-prem dependencies, setting up Postgres read replicas, reconfiguring load balancers, and ensuring zero-downtime cutover for all production services.
+        </div>
+        <button class="description-toggle" onclick="toggleDescription()">Show more</button>
+      </div>
+
+      <div class="counts-bar">
+        <div class="count-item"><span class="count-number">14</span><span class="count-label">Total</span></div>
+        <div class="count-item"><span class="count-number" style="color:var(--text-3)">3</span><span class="count-label">Open</span></div>
+        <div class="count-item"><span class="count-number" style="color:var(--yellow)">6</span><span class="count-label">In Progress</span></div>
+        <div class="count-item"><span class="count-number" style="color:var(--purple)">2</span><span class="count-label">In Review</span></div>
+        <div class="count-item"><span class="count-number" style="color:var(--green)">3</span><span class="count-label">Completed</span></div>
+      </div>
+
+      <div class="task-toolbar">
+        <div class="filter-group">
+          <button class="filter-btn active">All</button>
+          <button class="filter-btn">Open</button>
+          <button class="filter-btn">In Progress</button>
+          <button class="filter-btn">In Review</button>
+          <button class="filter-btn">Completed</button>
+        </div>
+        <button class="btn-primary">+ New Task</button>
+      </div>
+
+      <div class="task-table-header">
+        <div class="th"></div>
+        <div class="th">Task</div>
+        <div class="th">Assignee</div>
+        <div class="th">Priority</div>
+        <div class="th">Labels</div>
+        <div class="th">Due</div>
+      </div>
+
+      <div class="section-row">In Progress</div>
+
+      <div class="task-row" onclick="openSlideout()">
+        <div class="task-status-dot dot-in-progress"></div>
+        <div class="task-title">Migrate auth service to new cluster</div>
+        <div style="font-size:12px;color:var(--text-2)">sarah.k</div>
+        <div><span class="priority-badge priority-critical">Critical</span></div>
+        <div class="labels-cell"><span class="label-tag">bug</span><span class="label-tag">auth</span><span class="label-tag">sprint-3</span></div>
+        <div style="font-size:12px;color:var(--text-3)">Jun 30</div>
+      </div>
+
+      <div class="task-row" onclick="openSlideout()">
+        <div class="task-status-dot dot-in-progress"></div>
+        <div class="task-title">Set up Postgres read replicas</div>
+        <div style="font-size:12px;color:var(--text-2)">dev.team</div>
+        <div><span class="priority-badge priority-high">High</span></div>
+        <div class="labels-cell"><span class="label-tag">feature</span><span class="label-tag">database</span></div>
+        <div style="font-size:12px;color:var(--text-3)">Jul 2</div>
+      </div>
+
+      <div class="section-row">In Review</div>
+
+      <div class="task-row" onclick="openSlideout()">
+        <div class="task-status-dot dot-in-review"></div>
+        <div class="task-title">Load balancer configuration audit</div>
+        <div style="font-size:12px;color:var(--text-2)">infra.ops</div>
+        <div><span class="priority-badge priority-high">High</span></div>
+        <div class="labels-cell"><span class="label-tag">improvement</span><span class="label-tag">infra</span><span class="label-more">+2</span></div>
+        <div style="font-size:12px;color:var(--text-3)">Jun 28</div>
+      </div>
+
+      <div class="section-row">Open</div>
+
+      <div class="task-row" onclick="openSlideout()">
+        <div class="task-status-dot dot-open"></div>
+        <div class="task-title">Document deployment runbook</div>
+        <div style="font-size:12px;color:var(--text-3)">—</div>
+        <div><span class="priority-badge priority-medium">Medium</span></div>
+        <div class="labels-cell"><span class="label-tag">documentation</span></div>
+        <div style="font-size:12px;color:var(--text-3)">—</div>
+      </div>
+
+      <div class="task-row" onclick="openSlideout()">
+        <div class="task-status-dot dot-open"></div>
+        <div class="task-title">Implement circuit breaker for LLM service</div>
+        <div style="font-size:12px;color:var(--text-3)">—</div>
+        <div><span class="priority-badge priority-low">Low</span></div>
+        <div class="labels-cell">—</div>
+        <div style="font-size:12px;color:var(--text-3)">Jul 5</div>
+      </div>
+
+      <div class="section-row">Completed</div>
+
+      <div class="task-row" style="opacity:0.55" onclick="openSlideout()">
+        <div class="task-status-dot dot-completed"></div>
+        <div class="task-title">Initial infrastructure provisioning</div>
+        <div style="font-size:12px;color:var(--text-2)">infra.ops</div>
+        <div><span class="priority-badge priority-high">High</span></div>
+        <div class="labels-cell"><span class="label-tag">feature</span><span class="label-tag">infra</span></div>
+        <div style="font-size:12px;color:var(--text-3)">Jun 15</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE-OUT PANEL
+  ============================================================ -->
+  <div class="slideout-backdrop" id="slideout-backdrop" onclick="closeSlideout()"></div>
+
+  <div class="slideout-panel" id="slideout-panel">
+    <div class="slideout-header">
+      <span class="slideout-title">Task Detail</span>
+      <button class="slideout-close" onclick="closeSlideout()">✕</button>
+    </div>
+
+    <div class="slideout-body">
+
+      <!-- Title -->
+      <div class="slideout-task-title">Migrate auth service to new cluster</div>
+      <div class="slideout-task-meta">Created Jun 10, 2026 · Updated Jun 28, 2026</div>
+
+      <!-- Fields Grid -->
+      <div class="field-grid">
+        <div class="field-item">
+          <div class="field-label">Status</div>
+          <select class="field-select">
+            <option>Open</option>
+            <option selected>In Progress</option>
+            <option>In Review</option>
+            <option>Completed</option>
+          </select>
+        </div>
+        <div class="field-item">
+          <div class="field-label">Priority</div>
+          <select class="field-select">
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
+            <option selected>Critical</option>
+          </select>
+          <div id="priority-result" class="ai-result" style="display:none;margin-top:6px;">
+            <div class="ai-result-label">Suggested Priority</div>
+            <strong style="color:var(--accent)">Critical</strong>
+            <div style="margin-top:4px;color:var(--text-3);font-size:11px;">Auth service outages affect all users. High risk without a rollback plan.</div>
+          </div>
+          <button class="btn-ai-text" id="priority-btn" onclick="runPriority()">
+            <span class="spinner-inline" id="priority-spinner"></span>
+            <span id="priority-btn-label">✦ Suggest priority</span>
+          </button>
+        </div>
+        <div class="field-item">
+          <div class="field-label">Assignee</div>
+          <input class="field-input" type="text" value="sarah.k" />
+        </div>
+        <div class="field-item">
+          <div class="field-label">Due Date</div>
+          <input class="field-input" type="date" value="2026-06-30" />
+        </div>
+      </div>
+
+      <!-- Labels -->
+      <div class="slideout-section">
+        <div class="slideout-section-label">Labels</div>
+        <div class="labels-edit">
+          <span class="label-tag-edit">bug <span class="label-remove">✕</span></span>
+          <span class="label-tag-edit">auth <span class="label-remove">✕</span></span>
+          <span class="label-tag-edit">sprint-3 <span class="label-remove">✕</span></span>
+          <button class="label-add">+ Add label</button>
+        </div>
+        <div id="categorize-result" class="ai-result" style="display:none;margin-top:8px;">
+          <div class="ai-result-label">AI Categorization</div>
+          <strong style="color:var(--text-1)">Bug</strong> · 92% confidence — added to labels
+        </div>
+        <button class="btn-ai-text" id="categorize-btn" onclick="runCategorize()">
+          <span class="spinner-inline" id="categorize-spinner"></span>
+          <span id="categorize-btn-label">✦ Auto-categorize</span>
+        </button>
+      </div>
+
+      <!-- Description -->
+      <div class="slideout-section">
+        <div class="slideout-section-label">Description</div>
+        <textarea class="slideout-description" rows="5">The auth service must be migrated to the new Kubernetes cluster with zero downtime. This involves setting up the new service in the cluster, running both old and new services in parallel during transition, then cutting over DNS. Rollback plan must be documented and tested before cutover begins.</textarea>
+      </div>
+
+      <!-- Timestamps -->
+      <div class="timestamps">
+        <div class="timestamp-item">Created <span>Jun 10, 2026</span></div>
+        <div class="timestamp-item">Updated <span>Jun 28, 2026</span></div>
+      </div>
+
+    </div>
+
+    <div class="slideout-footer">
+      <button class="btn-danger">Delete task</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" onclick="closeSlideout()">Cancel</button>
+        <button class="btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLACEHOLDER MODAL -->
+  <div class="modal-overlay" id="placeholder-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="placeholder-title">Team</span>
+        <button class="modal-close" onclick="document.getElementById('placeholder-modal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:32px 24px;">
+        <span class="placeholder-icon">🚧</span>
+        <div class="placeholder-title">Coming Soon</div>
+        <p class="placeholder-desc">This section is not yet available in this version of the application.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('placeholder-modal').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY MODAL -->
+  <div class="modal-overlay" id="summary-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">✦ AI Project Summary</span>
+        <button class="modal-close" onclick="document.getElementById('summary-modal').style.display='none'">✕</button>
+      </div>
+      <div id="summary-loading" class="modal-body">
+        <div class="spinner-container">
+          <div class="spinner"></div>
+          <span class="spinner-label">Analyzing project health...</span>
+        </div>
+      </div>
+      <div id="summary-result" class="modal-body" style="display:none">
+        <div class="summary-eyebrow">Project Summary</div>
+        <div class="summary-project-name" id="summary-project-name"></div>
+        <div class="health-row">
+          <span style="font-size:13px;color:var(--text-2)">Overall health</span>
+          <span class="health-badge">On Track</span>
+        </div>
+        <p class="summary-text">12 of 14 tasks are progressing well. Two critical infrastructure tasks are currently in review. The team is on pace for the sprint deadline with no blockers flagged.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('summary-modal').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openSlideout() {
+      document.getElementById('slideout-panel').classList.add('open');
+      document.getElementById('slideout-backdrop').classList.add('open');
+    }
+
+    function closeSlideout() {
+      document.getElementById('slideout-panel').classList.remove('open');
+      document.getElementById('slideout-backdrop').classList.remove('open');
+    }
+
+    function showPlaceholder(section) {
+      document.getElementById('placeholder-title').textContent = section;
+      document.getElementById('placeholder-modal').style.display = 'flex';
+    }
+
+    function showSummary(projectName) {
+      document.getElementById('summary-project-name').textContent = projectName;
+      document.getElementById('summary-loading').style.display = 'block';
+      document.getElementById('summary-result').style.display = 'none';
+      document.getElementById('summary-modal').style.display = 'flex';
+      setTimeout(() => {
+        document.getElementById('summary-loading').style.display = 'none';
+        document.getElementById('summary-result').style.display = 'block';
+      }, 1800);
+    }
+
+    function toggleDescription() {
+      const desc = document.getElementById('proj-desc');
+      const btn = document.querySelector('.description-toggle');
+      if (desc.classList.contains('expanded')) {
+        desc.classList.remove('expanded');
+        btn.textContent = 'Show more';
+      } else {
+        desc.classList.add('expanded');
+        btn.textContent = 'Show less';
+      }
+    }
+
+    function runCategorize() {
+      const result = document.getElementById('categorize-result');
+      const spinner = document.getElementById('categorize-spinner');
+      const label = document.getElementById('categorize-btn-label');
+      result.style.display = 'none';
+      spinner.classList.add('visible');
+      label.textContent = 'Categorizing...';
+      setTimeout(() => {
+        spinner.classList.remove('visible');
+        label.textContent = '✦ Auto-categorize';
+        result.style.display = 'block';
+      }, 1400);
+    }
+
+    function runPriority() {
+      const result = document.getElementById('priority-result');
+      const spinner = document.getElementById('priority-spinner');
+      const label = document.getElementById('priority-btn-label');
+      result.style.display = 'none';
+      spinner.classList.add('visible');
+      label.textContent = 'Analyzing...';
+      setTimeout(() => {
+        spinner.classList.remove('visible');
+        label.textContent = '✦ Suggest priority';
+        result.style.display = 'block';
+      }, 1400);
+    }
+  </script>
+</body>
+</html>
